@@ -4,6 +4,7 @@ import Link from "next/link";
 import { CalendarPlus, Clock, Stethoscope, CalendarDays, CheckCircle2, XCircle, AlertCircle } from "lucide-react";
 
 import db from "@/lib/db";
+import { expireElapsedAppointments } from "@/lib/db/appointment-expiry";
 import { getRoleFromSessionClaims } from "@/lib/auth/session";
 import { AppShell } from "@/components/layout/app-shell";
 
@@ -83,6 +84,8 @@ export default async function PatientAppointmentsPage({
   if (!patient) {
     redirect("/patient/registration");
   }
+
+  await expireElapsedAppointments();
 
   const appointments = await db.appointment.findMany({
     where: { patient_id: patient.id },

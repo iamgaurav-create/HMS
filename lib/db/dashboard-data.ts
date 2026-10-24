@@ -1,4 +1,5 @@
 import db from "@/lib/db";
+import { expireElapsedAppointments } from "@/lib/db/appointment-expiry";
 import { Role } from "@/lib/generated/prisma/enums";
 import type { ActivityItem } from "@/components/tables/recent-activities-table";
 import type { AppointmentRow } from "@/components/tables/upcoming-appointments-table";
@@ -58,6 +59,7 @@ export async function getDashboardMetrics(): Promise<DashboardMetrics> {
   const start = todayStart();
 
   try {
+    await expireElapsedAppointments();
     const [
       totalPatients,
       totalDoctors,
@@ -152,6 +154,7 @@ export async function getRecentActivities(): Promise<ActivityItem[]> {
 export async function getUpcomingAppointments(): Promise<AppointmentRow[]> {
   try {
     const start = todayStart();
+    await expireElapsedAppointments();
     const appointments = await db.appointment.findMany({
       where: { appointment_date: { gte: start } },
       include: {
@@ -179,6 +182,7 @@ export async function getUpcomingAppointments(): Promise<AppointmentRow[]> {
 export async function getPatientQueue(): Promise<QueueItem[]> {
   try {
     const start = todayStart();
+    await expireElapsedAppointments();
     const appointments = await db.appointment.findMany({
       where: {
         appointment_date: { gte: start },
@@ -356,6 +360,7 @@ export async function getInvoices(): Promise<InvoiceRow[]> {
 export async function getDoctorSchedule(): Promise<AppointmentRow[]> {
   try {
     const start = todayStart();
+    await expireElapsedAppointments();
     const appointments = await db.appointment.findMany({
       where: { appointment_date: { gte: start } },
       include: {
@@ -447,6 +452,7 @@ export async function getAccountMetrics() {
 export async function getReceptionistMetrics() {
   const start = todayStart();
   try {
+    await expireElapsedAppointments();
     const [queueCount, registrationsToday, appointmentsToday] = await Promise.all([
       db.appointment.count({
         where: {
@@ -468,9 +474,18 @@ export async function getLabMetrics() {
   const start = todayStart();
   try {
     const [pending, completed] = await Promise.all([
-      db.labTest.count({ where: { status: { not: "Completed" } } }),
       db.labTest.count({
-        where: { status: "Completed", created_at: { gte: start } },
+        where: {
+          status: {
+            in: ["Pending", "Sample Collected", "In Progress", "Under Review"],
+          },
+        },
+      }),
+      db.labTest.count({
+        where: {
+          status: { in: ["Completed", "Verified", "Released"] },
+          created_at: { gte: start },
+        },
       }),
     ]);
     return { pending, completed };
@@ -481,12 +496,198 @@ export async function getLabMetrics() {
 
 export async function getPharmacyMetrics() {
   try {
-    const pendingRx = await db.medicalRecords.count({
-      where: { prescriptions: { not: null } },
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const todayEnd = new Date(todayStart);
+    todayEnd.setDate(todayEnd.getDate() + 1);
+
+    // 1. Pending prescriptions (PENDING + PARTIALLY_DISPENSED)
+    const pendingPrescriptions = await db.prescription.findMany({
+      where: {
+        status: { in: ["PENDING", "PARTIALLY_DISPENSED"] },
+      },
+      include: {
+        patient: { select: { first_name: true, last_name: true } },
+        doctor: { select: { name: true } },
+      },
+      orderBy: { created_at: "asc" },
+      take: 20,
     });
-    return { pendingRx, lowStock: 0, salesToday: 0 };
-  } catch {
-    return { pendingRx: 0, lowStock: 0, salesToday: 0 };
+
+    // 2. Low stock medicines
+    const medicinesWithStock = await db.medicine.findMany({
+      where: { is_active: true },
+      include: { batches: true },
+    });
+
+    const lowStockMedicines = medicinesWithStock
+      .map((medicine) => {
+        const usableBatches = medicine.batches.filter(
+          (b) => b.quantity > 0 && b.expiry_date > now
+        );
+        const usableStock = usableBatches.reduce((sum, b) => sum + b.quantity, 0);
+        return {
+          id: medicine.id,
+          name: medicine.name,
+          stock: usableStock,
+          reorderLevel: medicine.reorder_level,
+          isLow: usableStock > 0 && usableStock <= medicine.reorder_level,
+          isOut: usableStock === 0,
+        };
+      })
+      .filter((m) => m.isLow || m.isOut)
+      .sort((a, b) => {
+        if (a.isOut && !b.isOut) return -1;
+        if (!a.isOut && b.isOut) return 1;
+        return a.stock - b.stock;
+      })
+      .slice(0, 15);
+
+    // 3. Expired & expiring batches
+    const thirtyDaysLater = new Date(now);
+    thirtyDaysLater.setDate(thirtyDaysLater.getDate() + 30);
+
+    const [expiredBatches, expiringBatches] = await Promise.all([
+      db.medicineBatch.count({
+        where: { quantity: { gt: 0 }, expiry_date: { lt: now } },
+      }),
+      db.medicineBatch.count({
+        where: {
+          quantity: { gt: 0 },
+          expiry_date: { gte: now, lte: thirtyDaysLater },
+        },
+      }),
+    ]);
+
+    // 4. Sales today (walk-in + prescription bills)
+    const [walkInBills, prescriptionBills] = await Promise.all([
+      db.pharmacyBill.aggregate({
+        where: {
+          bill_number: { startsWith: "WALK-" },
+          status: { not: "CANCELLED" },
+          created_at: { gte: todayStart, lt: todayEnd },
+        },
+        _sum: { total_amount: true },
+        _count: { id: true },
+      }),
+      db.pharmacyBill.aggregate({
+        where: {
+          bill_number: { not: { startsWith: "WALK-" } },
+          status: { not: "CANCELLED" },
+          created_at: { gte: todayStart, lt: todayEnd },
+        },
+        _sum: { total_amount: true },
+        _count: { id: true },
+      }),
+    ]);
+
+    const salesToday =
+      (walkInBills._sum.total_amount ?? 0) + (prescriptionBills._sum.total_amount ?? 0);
+    const billsTodayCount =
+      (walkInBills._count.id ?? 0) + (prescriptionBills._count.id ?? 0);
+
+    // 5. Inventory totals
+    const [activeMedicinesCount, totalBatchesCount] = await Promise.all([
+      db.medicine.count({ where: { is_active: true } }),
+      db.medicineBatch.count({ where: { quantity: { gt: 0 } } }),
+    ]);
+
+    // 6. OTC medicines count
+    const otcMedicinesCount = await db.medicine.count({
+      where: { is_active: true, is_otc: true },
+    });
+
+    // 7. Recent walk-in sales
+    const recentWalkInSales = await db.pharmacyBill.findMany({
+      where: {
+        bill_number: { startsWith: "WALK-" },
+        status: { not: "CANCELLED" },
+      },
+      orderBy: { created_at: "desc" },
+      take: 5,
+      select: {
+        id: true,
+        bill_number: true,
+        customer_name: true,
+        total_amount: true,
+        created_at: true,
+        status: true,
+      },
+    });
+
+    // 8. Recent prescription bills
+    const recentPrescriptionBills = await db.pharmacyBill.findMany({
+      where: {
+        bill_number: { not: { startsWith: "WALK-" } },
+        status: { not: "CANCELLED" },
+      },
+      orderBy: { created_at: "desc" },
+      take: 5,
+      select: {
+        id: true,
+        bill_number: true,
+        patient: { select: { first_name: true, last_name: true } },
+        total_amount: true,
+        created_at: true,
+        status: true,
+      },
+    });
+
+    return {
+      metrics: {
+        pendingRx: pendingPrescriptions.length,
+        lowStock: lowStockMedicines.filter((m) => m.isLow).length,
+        outOfStock: lowStockMedicines.filter((m) => m.isOut).length,
+        expiredBatches,
+        expiringBatches,
+        salesToday,
+        billsToday: billsTodayCount,
+        activeMedicines: activeMedicinesCount,
+        totalBatches: totalBatchesCount,
+        otcMedicines: otcMedicinesCount,
+      },
+      lowStockMedicines: lowStockMedicines.map((m) => ({
+        id: m.id,
+        name: m.name,
+        stock: m.stock,
+        reorderLevel: m.reorderLevel,
+        isOut: m.isOut,
+      })),
+      pendingPrescriptions: pendingPrescriptions.map((rx) => ({
+        id: rx.id,
+        patient: `${rx.patient.first_name} ${rx.patient.last_name}`,
+        doctor: rx.doctor.name,
+        status: rx.status,
+        createdAt: rx.created_at.toLocaleString("en-IN", {
+          day: "2-digit",
+          month: "short",
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+      })),
+      recentWalkInSales,
+      recentPrescriptionBills,
+    };
+  } catch (error) {
+    console.error("Error fetching pharmacy metrics:", error);
+    return {
+      metrics: {
+        pendingRx: 0,
+        lowStock: 0,
+        outOfStock: 0,
+        expiredBatches: 0,
+        expiringBatches: 0,
+        salesToday: 0,
+        billsToday: 0,
+        activeMedicines: 0,
+        totalBatches: 0,
+        otcMedicines: 0,
+      },
+      lowStockMedicines: [],
+      pendingPrescriptions: [],
+      recentWalkInSales: [],
+      recentPrescriptionBills: [],
+    };
   }
 }
 

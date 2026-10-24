@@ -12,6 +12,7 @@ import {
   UserCheck,
   UserX,
   UserPlus,
+  Pill,
 } from "lucide-react";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
@@ -90,11 +91,13 @@ export function PatientsTable({
   currentPage,
   totalPages,
   totalPatients,
+  userRole,
 }: {
   patients: Patient[];
   currentPage: number;
   totalPages: number;
   totalPatients: number;
+  userRole?: string;
 }) {
   const [searchQuery, setSearchQuery] =
     useState("");
@@ -488,7 +491,18 @@ export function PatientsTable({
                         </td>
 
                         <td className="px-6 py-4">
-                          <div className="flex items-center justify-end gap-1">
+                          <div className="flex items-center justify-end gap-1.5">
+                            {(userRole === "Doctor" || userRole === "SuperAdmin" || userRole === "admin") && (
+                              <Link
+                                href={`/doctors/prescriptions/create?patientId=${patient.id}`}
+                                title={`Create Prescription for ${patient.first_name} ${patient.last_name}`}
+                                className="flex h-8 items-center gap-1.5 rounded-lg bg-sky-50 px-2.5 text-xs font-semibold text-sky-600 transition-all hover:bg-sky-600 hover:text-white dark:bg-sky-950/50 dark:text-sky-400 dark:hover:bg-sky-600 dark:hover:text-white"
+                              >
+                                <Pill className="h-3.5 w-3.5" />
+                                <span className="hidden xl:inline">Prescribe</span>
+                              </Link>
+                            )}
+
                             <Link
                               href={`/patients/${patient.id}`}
                               title="View patient"

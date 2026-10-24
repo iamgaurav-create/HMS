@@ -11,6 +11,10 @@ const pool =
   globalForPrisma.pool ??
   new Pool({
     connectionString: process.env.DATABASE_URL!,
+    max: 5,
+    idleTimeoutMillis: 30_000,
+    connectionTimeoutMillis: 10_000,
+    keepAlive: true,
   });
 
 const adapter = new PrismaPg(pool);
@@ -19,6 +23,10 @@ const db =
   globalForPrisma.prisma ??
   new PrismaClient({
     adapter,
+    transactionOptions: {
+      maxWait: 10_000,
+      timeout: 10_000,
+    },
   });
 
 if (process.env.NODE_ENV !== "production") {

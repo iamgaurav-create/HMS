@@ -3,7 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
 import { ThemeProvider } from "@/components/theme-provider";
-import { Toaster } from "sonner";
+import { Toaster } from "@/components/ui/sonner";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -24,17 +24,17 @@ export default function RootLayout({
   return (
     <html lang="en" className="h-full antialiased" suppressHydrationWarning>
       <body className={`${inter.variable} min-h-full bg-background text-foreground antialiased`}>
-        <ClerkProvider>
-          <ThemeProvider>
-          {children}
-          <Toaster
-            position="top-right"
-            richColors
-            closeButton
-            duration={5000}
-          />
-          </ThemeProvider>
-        </ClerkProvider>
+        <ThemeProvider>
+          <ClerkProvider>
+            {children}
+            <Toaster
+              position="top-right"
+              richColors
+              closeButton
+              duration={5000}
+            />
+          </ClerkProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

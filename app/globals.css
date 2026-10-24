@@ -200,3 +200,55 @@
 .dark .medical-gradient-subtle {
   background: linear-gradient(135deg, rgba(56, 189, 248, 0.12) 0%, rgba(45, 212, 191, 0.12) 100%);
 }
+
+
+
+@media print {
+  @page {
+    size: A4;
+    margin: 12mm;
+  }
+
+  body {
+    background: #fff !important;
+    color: #000 !important;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  body * {
+    visibility: hidden;
+  }
+
+  #pharmacy-receipt,
+  #pharmacy-receipt * {
+    visibility: visible;
+  }
+
+  #pharmacy-receipt {
+    position: absolute;
+    inset: 0 auto auto 0;
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    box-shadow: none;
+    color: #000;
+    background: #fff;
+  }
+
+  #pharmacy-receipt table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  #pharmacy-receipt tr {
+    break-inside: avoid;
+  }
+
+  #pharmacy-receipt th,
+  #pharmacy-receipt td {
+    color: #000;
+  }
+}

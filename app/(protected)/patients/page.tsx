@@ -110,6 +110,7 @@ export default async function PatientsPage({
           currentPage={page}
           totalPages={totalPages}
           totalPatients={totalPatients}
+          userRole={userRole}
         />
       </div>
     </AppShell>

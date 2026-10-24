@@ -197,7 +197,7 @@ export function StaffRegistrationForm({
             name="role"
             defaultValue={role}
             onChange={(e) => setSelectedRole(e.target.value)}
-            className="h-10 w-full rounded-lg border border-input bg-transparent px-2.5 py-2 text-base outline-none md:text-sm dark:bg-input/30"
+            className="h-10 w-full rounded-lg border border-input bg-background px-2.5 py-2 text-base outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] md:text-sm dark:bg-card dark:text-foreground"
           >
             {assignableRoles.map((r) => (
               <option key={r} value={r}>
@@ -239,7 +239,7 @@ export function StaffRegistrationForm({
                 id="type"
                 name="type"
                 defaultValue="FullTime"
-                className="h-10 w-full rounded-lg border border-input bg-transparent px-2.5 py-2 text-base outline-none md:text-sm dark:bg-input/30"
+                className="h-10 w-full rounded-lg border border-input bg-background px-2.5 py-2 text-base outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] md:text-sm dark:bg-card dark:text-foreground"
               >
                 <option value="FullTime">Full Time</option>
                 <option value="PartTime">Part Time</option>
@@ -253,7 +253,7 @@ export function StaffRegistrationForm({
                 id="availability_status"
                 name="availability_status"
                 defaultValue=""
-                className="h-10 w-full rounded-lg border border-input bg-transparent px-2.5 py-2 text-base outline-none md:text-sm dark:bg-input/30"
+                className="h-10 w-full rounded-lg border border-input bg-background px-2.5 py-2 text-base outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] md:text-sm dark:bg-card dark:text-foreground"
               >
                 <option value="">Select</option>
                 <option value="Available">Available</option>
@@ -311,7 +311,7 @@ export function StaffRegistrationForm({
               id="status"
               name="status"
               defaultValue={status}
-              className="h-10 w-full rounded-lg border border-input bg-transparent px-2.5 py-2 text-base outline-none md:text-sm dark:bg-input/30"
+              className="h-10 w-full rounded-lg border border-input bg-background px-2.5 py-2 text-base outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] md:text-sm dark:bg-card dark:text-foreground"
             >
               <option value="Active">Active</option>
               <option value="Inactive">Inactive</option>

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { CalendarPlus } from "lucide-react";
 
 import db from "@/lib/db";
+import { expireElapsedAppointments } from "@/lib/db/appointment-expiry";
 import { getRoleFromSessionClaims } from "@/lib/auth/session";
 import { AppShell } from "@/components/layout/app-shell";
 import {
@@ -33,6 +34,8 @@ export default async function AppointmentsMasterPage() {
   if (role === "patient") {
     redirect("/patient/appointments");
   }
+
+  await expireElapsedAppointments();
 
   const appointments = await db.appointment.findMany({
     include: {

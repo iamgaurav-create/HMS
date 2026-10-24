@@ -31,9 +31,17 @@ export const routeMatchers = {
   dashboard: createRouteMatcher(["/dashboard(.*)"]),
 
   patients: createRouteMatcher(["/patients(.*)"]),
-  doctors: createRouteMatcher(["/doctors(.*)"]),
+  doctors: createRouteMatcher([
+    "/doctors",
+    "/doctors/registration(.*)",
+    "/doctors/:id",
+  ]),
   appointments: createRouteMatcher(["/appointments(.*)"]),
-  prescriptions: createRouteMatcher(["/prescriptions(.*)"]),
+  prescriptions: createRouteMatcher([
+    "/prescriptions(.*)",
+    "/doctors/prescriptions(.*)",
+    "/pharmacy/prescriptions(.*)",
+  ]),
   medicalRecords: createRouteMatcher(["/medical-records(.*)"]),
   laboratory: createRouteMatcher(["/laboratory(.*)"]),
   pharmacy: createRouteMatcher(["/pharmacy(.*)"]),
@@ -50,108 +58,237 @@ export type RouteAccessRule = {
 };
 
 /**
- * Middleware and server guards use the same matrix so route policy lives in one place.
+ * Middleware and server guards use the same matrix
+ * so route policy lives in one place.
  */
 export const routeAccessRules: RouteAccessRule[] = [
   {
     matcher: routeMatchers.adminPortal,
     allowedRoles: [R.SuperAdmin, R.admin],
   },
+
   {
     matcher: routeMatchers.hrPortal,
     allowedRoles: [R.SuperAdmin, R.admin, R.HR],
   },
+
   {
     matcher: routeMatchers.hrRegistration,
     allowedRoles: [R.SuperAdmin, R.admin, R.HR],
   },
+
   {
     matcher: routeMatchers.doctorExact,
     allowedRoles: [R.SuperAdmin, R.admin, R.Doctor, R.HR],
   },
+
   {
     matcher: routeMatchers.doctorPortal,
     allowedRoles: [R.SuperAdmin, R.admin, R.Doctor, R.HR],
   },
+
   {
     matcher: routeMatchers.patientExact,
     allowedRoles: [R.SuperAdmin, R.admin, R.patient],
   },
+
   {
     matcher: routeMatchers.patientPortal,
-    allowedRoles: [R.SuperAdmin, R.admin, R.patient, R.Receptionist, R.Doctor, R.Nurse],
+    allowedRoles: [
+      R.SuperAdmin,
+      R.admin,
+      R.patient,
+      R.Receptionist,
+      R.Doctor,
+      R.Nurse,
+    ],
   },
+
   {
     matcher: routeMatchers.receptionistPortal,
     allowedRoles: [R.SuperAdmin, R.admin, R.Receptionist],
   },
+
   {
     matcher: routeMatchers.nursePortal,
     allowedRoles: [R.SuperAdmin, R.admin, R.Nurse],
   },
+
   {
     matcher: routeMatchers.labPortal,
-    allowedRoles: [R.SuperAdmin, R.admin, R.LabTechnician, R.Doctor],
+    allowedRoles: [
+      R.SuperAdmin,
+      R.admin,
+      R.LabTechnician,
+      R.Doctor,
+    ],
   },
+
   {
     matcher: routeMatchers.pharmacyPortal,
-    allowedRoles: [R.SuperAdmin, R.admin, R.Pharmacist, R.Nurse],
+    allowedRoles: [
+      R.SuperAdmin,
+      R.admin,
+      R.Pharmacist,
+    ],
   },
+
   {
     matcher: routeMatchers.accountantPortal,
-    allowedRoles: [R.SuperAdmin, R.admin, R.Accountant],
+    allowedRoles: [
+      R.SuperAdmin,
+      R.admin,
+      R.Accountant,
+    ],
   },
+
   {
     matcher: routeMatchers.staffs,
-    allowedRoles: [R.SuperAdmin, R.admin, R.HR],
+    allowedRoles: [
+      R.SuperAdmin,
+      R.admin,
+      R.HR,
+    ],
   },
+
   {
     matcher: routeMatchers.settings,
-    allowedRoles: [R.SuperAdmin, R.admin],
+    allowedRoles: [
+      R.SuperAdmin,
+      R.admin,
+    ],
   },
+
+  // Inventory
   {
     matcher: routeMatchers.inventory,
-    allowedRoles: [R.SuperAdmin, R.admin, R.Pharmacist],
+    allowedRoles: [
+      R.SuperAdmin,
+      R.admin,
+      R.Pharmacist,
+    ],
   },
+
   {
     matcher: routeMatchers.reports,
-    allowedRoles: [R.SuperAdmin, R.admin, R.Accountant],
+    allowedRoles: [
+      R.SuperAdmin,
+      R.admin,
+      R.Accountant,
+    ],
   },
+
+  // Patients
   {
     matcher: routeMatchers.patients,
-    allowedRoles: [R.SuperAdmin, R.admin, R.Doctor, R.Nurse, R.LabTechnician, R.Receptionist, R.Pharmacist, R.Accountant],
+    allowedRoles: [
+      R.SuperAdmin,
+      R.admin,
+      R.Doctor,
+      R.Nurse,
+      R.LabTechnician,
+      R.Receptionist,
+      R.Pharmacist,
+      R.Accountant,
+    ],
   },
-  {
-    matcher: routeMatchers.doctors,
-    allowedRoles: [R.SuperAdmin, R.admin, R.HR],
-  },
-  {
-    matcher: routeMatchers.appointments,
-    allowedRoles: [R.SuperAdmin, R.admin, R.Doctor, R.Nurse, R.Receptionist, R.patient],
-  },
+
+  // Prescriptions
   {
     matcher: routeMatchers.prescriptions,
-    allowedRoles: [R.SuperAdmin, R.admin, R.Doctor, R.Pharmacist, R.Nurse],
+    allowedRoles: [
+      R.SuperAdmin,
+      R.admin,
+      R.Doctor,
+      R.Pharmacist,
+      R.Nurse,
+      R.patient,
+    ],
   },
+
+  // Doctors
+  {
+    matcher: routeMatchers.doctors,
+    allowedRoles: [
+      R.SuperAdmin,
+      R.admin,
+      R.HR,
+      R.Doctor,
+    ],
+  },
+
+  // Appointments
+  {
+    matcher: routeMatchers.appointments,
+    allowedRoles: [
+      R.SuperAdmin,
+      R.admin,
+      R.Doctor,
+      R.Nurse,
+      R.Receptionist,
+      R.patient,
+    ],
+  },
+
+  // Medical Records
   {
     matcher: routeMatchers.medicalRecords,
-    allowedRoles: [R.SuperAdmin, R.admin, R.Doctor, R.Nurse, R.patient],
+    allowedRoles: [
+      R.SuperAdmin,
+      R.admin,
+      R.Doctor,
+      R.Nurse,
+      R.patient,
+    ],
   },
+
+  // Laboratory
   {
     matcher: routeMatchers.laboratory,
-    allowedRoles: [R.SuperAdmin, R.admin, R.LabTechnician, R.Doctor],
+    allowedRoles: [
+      R.SuperAdmin,
+      R.admin,
+      R.LabTechnician,
+      R.Doctor,
+    ],
   },
+
+  // Pharmacy
   {
     matcher: routeMatchers.pharmacy,
-    allowedRoles: [R.SuperAdmin, R.admin, R.Pharmacist, R.Nurse],
+    allowedRoles: [
+      R.SuperAdmin,
+      R.admin,
+      R.Pharmacist,
+    ],
   },
+
+
+  // Billing
   {
     matcher: routeMatchers.billing,
-    allowedRoles: [R.SuperAdmin, R.admin, R.Accountant, R.Receptionist, R.patient],
+    allowedRoles: [
+      R.SuperAdmin,
+      R.admin,
+      R.Accountant,
+      R.Receptionist,
+      R.patient,
+    ],
   },
+
+  // Staff password
   {
     matcher: routeMatchers.staffChangePassword,
-    allowedRoles: [R.SuperAdmin, R.admin, R.HR, R.Receptionist, R.Nurse, R.LabTechnician, R.Pharmacist, R.Accountant],
+    allowedRoles: [
+      R.SuperAdmin,
+      R.admin,
+      R.HR,
+      R.Receptionist,
+      R.Nurse,
+      R.LabTechnician,
+      R.Pharmacist,
+      R.Accountant,
+    ],
   },
 ];
 
@@ -159,40 +296,48 @@ export function findRouteAccessViolation(
   req: NextRequest,
   role: AppRole | undefined
 ): RouteAccessRule | undefined {
+  if (routeMatchers.prescriptions(req)) {
+    const prescriptionRule = routeAccessRules.find(
+      (r) => r.matcher === routeMatchers.prescriptions
+    );
+    if (prescriptionRule && (!role || !prescriptionRule.allowedRoles.includes(role))) {
+      return prescriptionRule;
+    }
+    return undefined;
+  }
+
   for (const rule of routeAccessRules) {
     if (!rule.matcher(req)) continue;
+
     if (!role || !rule.allowedRoles.includes(role)) {
       return rule;
     }
   }
+
   return undefined;
 }
 
-/**
- * Returns only the roles that have access to the matched route,
- * filtered to exclude roles with no access.
- */
 export function getAllowedRolesForRoute(
   matcher: (req: NextRequest) => boolean,
   request: NextRequest
 ): readonly AppRole[] {
   for (const rule of routeAccessRules) {
     if (!matcher(request)) continue;
+
     return rule.allowedRoles;
   }
+
   return [];
 }
 
-/**
- * Returns a filtered list of roles that can access at least one route.
- * Useful for previewing which roles are active in the system.
- */
 export function getActiveRoles(): readonly AppRole[] {
   const active = new Set<AppRole>();
+
   for (const rule of routeAccessRules) {
     for (const role of rule.allowedRoles) {
       active.add(role);
     }
   }
+
   return Array.from(active);
 }

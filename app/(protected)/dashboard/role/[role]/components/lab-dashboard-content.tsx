@@ -1,6 +1,7 @@
+
 import { Suspense } from "react";
-import { DashboardSkeleton, RoleDashboardSkeleton } from "@/components/dashboard/dashboard-skeleton";
-import { LabDashboard } from "@/components/dashboard/lab-dashboard";
+import { RoleDashboardSkeleton } from "@/components/dashboard/dashboard-skeleton";
+import { LabDashboard } from "@/components/laboratory/dashboard/lab-dashboard";
 
 export function LabDashboardContent() {
   return (
@@ -11,12 +12,14 @@ export function LabDashboardContent() {
 }
 
 async function LabDashboardLoader() {
-  const { getPendingLabTests, getLabMetrics } = await import("@/lib/db/dashboard-data");
+  const { getLabDashboardData } = await import("@/lib/db/laboratory-data");
 
-  const [pendingTests, metrics] = await Promise.all([
-    getPendingLabTests(),
-    getLabMetrics(),
-  ]);
+    const { metrics, recentOrders } = await getLabDashboardData();
 
-  return <LabDashboard pendingTests={pendingTests} metrics={metrics} />;
+    return (
+        <LabDashboard
+            metrics={metrics}
+            recentOrders={recentOrders}
+        />
+    );
 }

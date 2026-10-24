@@ -137,6 +137,33 @@ export default async function PatientDetailPage({
     patient.date_of_birth,
   );
 
+  const prescriptions = await db.prescription.findMany({
+    where: {
+      patient_id: patientId,
+    },
+    include: {
+      doctor: {
+        select: {
+          name: true,
+          specialization: true,
+        },
+      },
+      medicines: {
+        include: {
+          medicine: {
+            select: {
+              name: true,
+              unit: true,
+            },
+          },
+        },
+      },
+    },
+    orderBy: {
+      created_at: "desc",
+    },
+  });
+
   return (
     <AppShell userRole={userRole}>
       <div className="space-y-6">
@@ -168,6 +195,18 @@ export default async function PatientDetailPage({
                 Download PDF
               </Button>
             </a>
+
+            {(userRole === "Doctor" || userRole === "SuperAdmin" || userRole === "admin") && (
+              <Link
+                href={`/doctors/prescriptions/create?patientId=${patient.id}`}
+              >
+                <Button
+                  className="rounded-xl bg-sky-600 text-xs font-bold text-white hover:bg-sky-700"
+                >
+                  Create Prescription
+                </Button>
+              </Link>
+            )}
 
             <Link
               href={`/patient/registration?edit=${patient.id}`}
@@ -480,6 +519,89 @@ export default async function PatientDetailPage({
                 </div>
 
               </div>
+            </div>
+
+            <div className="rounded-2xl glass-card p-6">
+
+              <h3 className="mb-5 text-sm font-bold text-slate-900 dark:text-slate-100">
+                Prescriptions
+              </h3>
+
+              {prescriptions.length === 0 ? (
+                <p className="text-xs text-slate-500">
+                  No prescriptions recorded yet.
+                </p>
+              ) : (
+                <div className="space-y-4">
+                  {prescriptions.map(
+                    (prescription) => (
+                      <div
+                        key={prescription.id}
+                        className="rounded-xl border border-slate-200 p-4 dark:border-slate-700"
+                      >
+                        <div className="mb-2 flex items-center justify-between">
+                          <span
+                            className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${
+                              prescription.status ===
+                              "PENDING"
+                                ? "bg-yellow-100 text-yellow-700"
+                                : prescription.status ===
+                                    "DISPENSED"
+                                  ? "bg-green-100 text-green-700"
+                                  : prescription.status ===
+                                      "PARTIALLY_DISPENSED"
+                                    ? "bg-blue-100 text-blue-700"
+                                    : "bg-red-100 text-red-700"
+                            }`}
+                          >
+                            {prescription.status}
+                          </span>
+
+                          <span className="text-[10px] text-slate-400">
+                            {new Date(
+                              prescription.created_at,
+                            ).toLocaleDateString()}
+                          </span>
+                        </div>
+
+                        <p className="text-xs text-slate-500">
+                          Dr. {prescription.doctor.name}
+                        </p>
+
+                        <p className="mt-1 text-xs text-slate-500">
+                          {prescription.doctor.specialization}
+                        </p>
+
+                        {prescription.notes && (
+                          <p className="mt-2 rounded-lg bg-slate-50 p-2 text-xs text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                            {prescription.notes}
+                          </p>
+                        )}
+
+                        <div className="mt-3 space-y-1">
+                          {prescription.medicines.map(
+                            (item) => (
+                              <div
+                                key={item.id}
+                                className="flex items-center justify-between text-xs"
+                              >
+                                <span className="font-medium text-slate-700 dark:text-slate-300">
+                                  {item.medicine.name}
+                                </span>
+
+                                <span className="text-slate-500">
+                                  {item.dosage} ·{" "}
+                                  {item.frequency}
+                                </span>
+                              </div>
+                            )
+                          )}
+                        </div>
+                      </div>
+                    )
+                  )}
+                </div>
+              )}
             </div>
 
           </div>

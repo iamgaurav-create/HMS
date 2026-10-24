@@ -304,7 +304,7 @@ export function PatientRegistrationForm({
           <Label htmlFor="gender">
             Gender <span className="text-red-500">*</span>
           </Label>
-          <select id="gender" name="gender" defaultValue={gender} className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 py-1 text-base outline-none md:text-sm dark:bg-input/30">
+          <select id="gender" name="gender" defaultValue={gender} className="h-8 w-full rounded-lg border border-input bg-background px-2.5 py-1 text-base outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] md:text-sm dark:bg-card dark:text-foreground">
             <option value="">Select</option>
             <option value="Male">Male</option>
             <option value="Female">Female</option>
@@ -314,7 +314,7 @@ export function PatientRegistrationForm({
           <Label htmlFor="marital_status">
             Marital Status <span className="text-red-500">*</span>
           </Label>
-          <select id="marital_status" name="marital_status" defaultValue={marital_status} className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 py-1 text-base outline-none md:text-sm dark:bg-input/30">
+          <select id="marital_status" name="marital_status" defaultValue={marital_status} className="h-8 w-full rounded-lg border border-input bg-background px-2.5 py-1 text-base outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] md:text-sm dark:bg-card dark:text-foreground">
             <option value="">Select</option>
             <option value="Single">Single</option>
             <option value="Married">Married</option>
@@ -324,7 +324,7 @@ export function PatientRegistrationForm({
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="blood_group">Blood Group</Label>
-          <select id="blood_group" name="blood_group" defaultValue={blood_group} className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 py-1 text-base outline-none md:text-sm dark:bg-input/30">
+          <select id="blood_group" name="blood_group" defaultValue={blood_group} className="h-8 w-full rounded-lg border border-input bg-background px-2.5 py-1 text-base outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] md:text-sm dark:bg-card dark:text-foreground">
             <option value="">Select</option>
             <option value="A+">A+</option>
             <option value="A-">A-</option>

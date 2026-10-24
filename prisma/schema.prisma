@@ -71,15 +71,52 @@ enum PaymentStatus {
   PartPayment
 }
 
+enum StockTransactionType {
+  PURCHASE
+  DISPENSE
+  RETURN
+  ADJUSTMENT
+  EXPIRED
+  DAMAGED
+}
+
+enum PrescriptionStatus {
+  PENDING
+  PARTIALLY_DISPENSED
+  DISPENSED
+  CANCELLED
+}
+
+enum PurchaseOrderStatus {
+  DRAFT
+  ORDERED
+  PARTIALLY_RECEIVED
+  RECEIVED
+  CANCELLED
+}
+
+enum PharmacyBillStatus {
+  UNPAID
+  PARTIAL
+  PAID
+  CANCELLED
+}
+
+enum PharmacyPaymentMethod {
+  CASH
+  CARD
+  ONLINE
+}
+
 model Patient {
-  id                         String           @id @default(cuid())
-  patientNumber              String           @unique
+  id                         String   @id @default(cuid())
+  patientNumber              String   @unique
   first_name                 String
   last_name                  String
   date_of_birth              DateTime
-  gender                     Gender           @default(Male)
+  gender                     Gender   @default(Male)
   phone                      String
-  email                      String           @unique
+  email                      String   @unique
   marital_status             String
   address                    String
   emergency_contact_name     String
@@ -94,75 +131,87 @@ model Patient {
   service_consent            Boolean
   medical_consent            Boolean
   img                        String?
-  status                     Status           @default(Active)
-  appointments               Appointment[]
-  medical                    MedicalRecords[]
-  payments                   Payment[]
-  ratings                    Rating[]
-  created_at                 DateTime         @default(now())
-  updated_at                 DateTime         @updatedAt
+  status                     Status   @default(Active)
+  
+  
+  appointments  Appointment[]
+  medical       MedicalRecords[]
+  payments      Payment[]
+  ratings       Rating[]
+  prescriptions Prescription[]
+  pharmacyBills PharmacyBill[]
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
   @@index([created_at])
 }
 
 model Doctor {
-  id                  String        @id
-  clerkUserId         String?       @unique
-  email               String        @unique
+  id                  String  @id
+  clerkUserId         String? @unique
+  email               String  @unique
   name                String
   specialization      String
   license_number      String
   phone               String
   address             String
   department          String?
-  hospitalEmail       String?       @unique
+  hospitalEmail       String? @unique
   img                 String?
   availability_status String?
-  type                JobType       @default(FullTime)
-  status              Status        @default(Active)
-  mustChangePassword  Boolean       @default(false)
-  onboardingCompleted Boolean       @default(false)
-  working_days        WorkingDays[]
-  appointments        Appointment[]
-  ratings             Rating[]
-  diagnosis           Diagnosis[]
-  created_at          DateTime      @default(now())
-  updated_at          DateTime      @updatedAt
+  type                JobType @default(FullTime)
+  status              Status  @default(Active)
+  mustChangePassword  Boolean @default(false)
+  onboardingCompleted Boolean @default(false)
+
+  working_days WorkingDays[]
+  appointments Appointment[]
+  ratings      Rating[]
+  diagnosis    Diagnosis[]
+
+  prescriptions Prescription[]
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 }
 
 model WorkingDays {
-  id         Int      @id @default(autoincrement())
+  id         Int    @id @default(autoincrement())
   doctor_id  String
   day        String
   start_time String
   close_time String
-  doctor     Doctor   @relation(fields: [doctor_id], references: [id], onDelete: Cascade)
+
+  doctor Doctor @relation(fields: [doctor_id], references: [id], onDelete: Cascade)
+
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 }
 
 model Staff {
-  id             String   @id
-  clerkUserId    String?  @unique
-  email          String   @unique
-  name           String
-  phone          String
-  address        String
-  department     String?
-  img            String?
-  license_number String?
-  role           Role
-  hospitalEmail  String?  @unique
-  mustChangePassword Boolean @default(false)
-  onboardingCompleted Boolean @default(false)
+  id                  String           @id
+  clerkUserId         String?          @unique
+  email               String           @unique
+  name                String
+  phone               String
+  address             String
+  department          String?
+  img                 String?
+  license_number      String?
+  role                Role
+  hospitalEmail       String?          @unique
+  mustChangePassword  Boolean          @default(false)
+  onboardingCompleted Boolean          @default(false)
   onboardingStatus    OnboardingStatus @default(PENDING)
   approvedBy          String?
   approvedAt          DateTime?
   changeRequest       String?
   rejectionReason     String?
-  status         Status   @default(Active)
-  created_at     DateTime @default(now())
-  updated_at     DateTime @updatedAt
+  status              Status           @default(Active)
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 }
 
 model Appointment {
@@ -174,19 +223,171 @@ model Appointment {
   status           AppointmentStatus @default(Pending)
   type             String
   note             String?
-  patient          Patient           @relation(fields: [patient_id], references: [id], onDelete: Cascade)
-  doctor           Doctor            @relation(fields: [doctor_id], references: [id])
-  bills            Payment[]
-  medical          MedicalRecords[]
   reason           String?
-  created_at       DateTime         @default(now())
-  updated_at       DateTime         @updatedAt
 
+  patient Patient @relation(fields: [patient_id], references: [id], onDelete: Cascade)
+  doctor  Doctor  @relation(fields: [doctor_id], references: [id])
+
+  bills   Payment[]
+  medical MedicalRecords[]
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@unique([doctor_id, appointment_date, time])
   @@index([appointment_date])
   @@index([status])
   @@index([patient_id])
   @@index([doctor_id])
-  @@unique([doctor_id, appointment_date, time])
+}
+
+model Medicine {
+  id            String  @id @default(cuid())
+  name          String
+  generic_name  String?
+  category      String?
+  manufacturer  String?
+  unit          String
+  reorder_level Int     @default(10)
+  is_active     Boolean @default(true)
+  is_otc Boolean @default(false)
+
+  batches            MedicineBatch[]
+  stockTransactions  StockTransaction[]
+  prescriptionItems  PrescriptionMedicine[]
+  purchaseOrderItems PurchaseOrderItem[]
+  pharmacyBillItems PharmacyBillItem[]
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@index([name])
+  @@index([category])
+  @@index([is_active])
+}
+
+model Supplier {
+  id        String  @id @default(cuid())
+  name      String
+  phone     String?
+  email     String?
+  address   String?
+  is_active Boolean @default(true)
+
+  batches        MedicineBatch[]
+  purchaseOrders PurchaseOrder[]
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@index([name])
+  @@index([is_active])
+}
+
+model MedicineBatch {
+  id String @id @default(cuid())
+
+  medicine_id String
+  supplier_id String?
+
+  batch_number String
+  expiry_date  DateTime
+
+  quantity Int @default(0)
+
+  purchase_price Float
+  selling_price  Float
+
+  medicine Medicine  @relation(fields: [medicine_id], references: [id], onDelete: Cascade)
+  supplier Supplier? @relation(fields: [supplier_id], references: [id], onDelete: SetNull)
+
+  stockTransactions StockTransaction[]
+  pharmacyBillItems PharmacyBillItem[]
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@index([medicine_id])
+  @@index([supplier_id])
+  @@index([expiry_date])
+  @@index([batch_number])
+}
+
+model StockTransaction {
+  id              String   @id @default(cuid())
+
+  medicine_id     String
+  batch_id        String
+
+  type            StockTransactionType
+  quantity        Int
+
+  unit_price      Float?
+
+  reason          String?
+  created_by      String
+
+  medicine Medicine @relation(fields: [medicine_id], references: [id], onDelete: Cascade)
+
+  batch MedicineBatch @relation(fields: [batch_id], references: [id], onDelete: Cascade)
+
+  created_at DateTime @default(now())
+
+  @@index([medicine_id])
+  @@index([batch_id])
+  @@index([type])
+  @@index([created_at])
+  @@index([created_by])
+}
+
+model Prescription {
+  id String @id @default(cuid())
+
+  patient_id String
+  doctor_id  String
+  medical_id Int?
+
+  status PrescriptionStatus @default(PENDING)
+
+  notes String?
+
+  patient Patient @relation(fields: [patient_id], references: [id], onDelete: Cascade)
+  doctor  Doctor  @relation(fields: [doctor_id], references: [id])
+
+  medicines PrescriptionMedicine[]
+  pharmacyBills PharmacyBill[]
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@index([patient_id])
+  @@index([doctor_id])
+  @@index([medical_id])
+  @@index([status])
+  @@index([created_at])
+}
+
+model PrescriptionMedicine {
+  id String @id @default(cuid())
+
+  prescription_id String
+  medicine_id     String
+
+  dosage    String
+  frequency String
+  duration  String
+
+  quantity      Int
+  dispensed_qty Int @default(0)
+
+  prescription Prescription @relation(fields: [prescription_id], references: [id], onDelete: Cascade)
+  medicine     Medicine     @relation(fields: [medicine_id], references: [id], onDelete: Cascade)
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@index([prescription_id])
+  @@index([medicine_id])
 }
 
 model Payment {
@@ -235,7 +436,6 @@ model PatientBills {
   total_cost Float
 
   service Service @relation(fields: [service_id], references: [id])
-
   payment Payment @relation(fields: [bill_id], references: [id], onDelete: Cascade)
 
   created_at DateTime @default(now())
@@ -246,16 +446,38 @@ model LabTest {
   id Int @id @default(autoincrement())
 
   record_id Int
+  order_id  String?
+ result_data         Json?
+ result_unit         String?
+ reference_range     String?
+ result_flag         String?
+ sample_type         String?
+ sample_id           String?
+ sample_collected_at DateTime?
+ sample_status       String?
+ performed_by        String?
+ performed_by_name   String?
+ performed_at        DateTime?
+ submitted_at        DateTime?
+ verified_by         String?
+ verified_by_name    String?
+ verified_at         DateTime?
+ released_by         String?
+ released_by_name    String?
+ released_at         DateTime?
+ amended_by          String?
+ amended_by_name     String?
+ amended_at          DateTime?
+ amendment_reason    String?
 
   test_date DateTime
   result    String
   status    String
   notes     String?
 
-  service_id Int @unique
+  service_id Int
 
-  service Service @relation(fields: [service_id], references: [id])
-
+  service        Service        @relation(fields: [service_id], references: [id])
   medical_record MedicalRecords @relation(fields: [record_id], references: [id], onDelete: Cascade)
 
   created_at DateTime @default(now())
@@ -263,6 +485,9 @@ model LabTest {
 
   @@index([status])
   @@index([test_date])
+  @@index([service_id])
+  @@index([order_id])
+  @@index([sample_id])
 }
 
 model MedicalRecords {
@@ -292,6 +517,7 @@ model MedicalRecords {
   @@index([patient_id])
   @@index([appointment_id])
   @@index([doctor_id])
+  @@unique([appointment_id])
 }
 
 model VitalSigns {
@@ -327,7 +553,8 @@ model Diagnosis {
   medical_id Int
   doctor_id  String
 
-  doctor Doctor @relation(fields: [doctor_id], references: [id])
+  doctor  Doctor         @relation(fields: [doctor_id], references: [id])
+  medical MedicalRecords @relation(fields: [medical_id], references: [id], onDelete: Cascade)
 
   symptoms  String
   diagnosis String
@@ -336,14 +563,13 @@ model Diagnosis {
   prescribed_medications String?
   follow_up_plan         String?
 
-  medical MedicalRecords @relation(fields: [medical_id], references: [id], onDelete: Cascade)
-
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 }
 
 model Auditlog {
-  id        Int    @id @default(autoincrement())
+  id Int @id @default(autoincrement())
+
   user_id   String
   record_id String
   action    String
@@ -374,29 +600,166 @@ model Rating {
 }
 
 model Service {
-  id           Int       @id @default(autoincrement())
+  id Int @id @default(autoincrement())
+
   service_name String
   description  String
   price        Float
-  labtest      LabTest[]
 
-  created_at   DateTime       @default(now())
-  updated_at   DateTime       @updatedAt
+  labtest LabTest[]
+  labTemplate LabTestTemplate?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
   patientBills PatientBills[]
 }
 
+/// The result sheet a laboratory service is measured against. The parameters
+/// and their reference ranges are configured by the laboratory, so the values
+/// always follow the validated policy of the hospital instead of hard coded
+/// clinical ranges.
+model LabTestTemplate {
+  id           Int     @id @default(autoincrement())
+  service_id   Int     @unique
+  template_key String
+  specimen     String?
+  parameters   Json?
+  is_active    Boolean @default(true)
+
+  service Service @relation(fields: [service_id], references: [id], onDelete: Cascade)
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@index([template_key])
+}
+
 model Notification {
-  id         Int      @id @default(autoincrement())
-  user_id    String
-  title      String
-  message    String
-  type       String
-  is_read    Boolean  @default(false)
-  link       String?
+  id Int @id @default(autoincrement())
+
+  user_id String
+  title   String
+  message String
+  type    String
+  is_read Boolean @default(false)
+  link    String?
+
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
   @@index([user_id])
   @@index([is_read])
+  @@index([created_at])
+}
+
+model PurchaseOrder {
+  id            String              @id @default(cuid())
+  order_number  String              @unique
+  supplier_id   String
+  status        PurchaseOrderStatus @default(DRAFT)
+  order_date    DateTime            @default(now())
+  expected_date DateTime?
+  notes         String?
+  created_by    String
+  email_sent_at    DateTime?
+  whatsapp_sent_at DateTime?
+  pdf_url       String?
+
+  supplier Supplier @relation(fields: [supplier_id], references: [id])
+
+  items PurchaseOrderItem[]
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@index([supplier_id])
+  @@index([status])
+  @@index([order_date])
+}
+
+model PurchaseOrderItem {
+  id                String @id @default(cuid())
+  purchase_order_id String
+  medicine_id       String
+  quantity          Int
+  received_quantity Int    @default(0)
+  purchase_price    Float
+
+
+  purchaseOrder PurchaseOrder @relation(fields: [purchase_order_id], references: [id], onDelete: Cascade)
+  medicine      Medicine      @relation(fields: [medicine_id], references: [id])
+
+  @@index([purchase_order_id])
+  @@index([medicine_id])
+}
+
+
+
+model PharmacyBill {
+  id              String   @id @default(cuid())
+  bill_number     String   @unique
+  patient_id      String?
+  prescription_id String?
+  customer_name   String?
+  customer_phone  String?
+  subtotal        Float
+  discount        Float    @default(0)
+  total_amount    Float
+  amount_paid     Float    @default(0)
+  balance_amount  Float    @default(0)
+  status          PharmacyBillStatus @default(UNPAID)
+
+  patient         Patient? @relation(fields: [patient_id], references: [id], onDelete: SetNull)
+  prescription    Prescription? @relation(fields: [prescription_id], references: [id], onDelete: SetNull)
+  items           PharmacyBillItem[]
+  payments        PharmacyPayment[]
+
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  @@index([patient_id])
+  @@index([prescription_id])
+  @@index([status])
+  @@index([created_at])
+}
+
+model PharmacyBillItem {
+  id           String   @id @default(cuid())
+  bill_id      String
+  medicine_id  String
+  batch_id     String?
+  medicine_name String
+  quantity     Int
+  unit_price   Float
+  total_price  Float
+  unit         String   @default("pcs")
+  discount     Float    @default(0)
+
+  bill         PharmacyBill @relation(fields: [bill_id], references: [id], onDelete: Cascade)
+  medicine     Medicine @relation(fields: [medicine_id], references: [id], onDelete: Restrict)
+  batch        MedicineBatch? @relation(fields: [batch_id], references: [id], onDelete: SetNull)
+
+  created_at   DateTime @default(now())
+
+  @@index([bill_id])
+  @@index([medicine_id])
+  @@index([batch_id])
+}
+
+model PharmacyPayment {
+  id          String                @id @default(cuid())
+
+  bill_id     String
+
+  amount      Float
+  method      PharmacyPaymentMethod
+  transaction_id String?
+
+  bill PharmacyBill @relation(fields: [bill_id], references: [id], onDelete: Cascade)
+
+  created_at DateTime @default(now())
+
+  @@index([bill_id])
   @@index([created_at])
 }

@@ -13,7 +13,15 @@ export function PharmacyDashboardContent() {
 async function PharmacyDashboardLoader() {
   const { getPharmacyMetrics } = await import("@/lib/db/dashboard-data");
 
-  const metrics = await getPharmacyMetrics();
+  const data = await getPharmacyMetrics();
 
-  return <PharmacyDashboard metrics={metrics} />;
+  return (
+    <PharmacyDashboard
+      metrics={data.metrics}
+      lowStockMedicines={data.lowStockMedicines}
+      pendingPrescriptions={data.pendingPrescriptions}
+      recentWalkInSales={data.recentWalkInSales}
+      recentPrescriptionBills={data.recentPrescriptionBills}
+    />
+  );
 }

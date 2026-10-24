@@ -135,7 +135,7 @@ export function DoctorRegistrationForm({
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="type">Employment Type</Label>
-          <select id="type" name="type" defaultValue={type} className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 py-1 text-base outline-none md:text-sm dark:bg-input/30">
+          <select id="type" name="type" defaultValue={type} className="h-8 w-full rounded-lg border border-input bg-background px-2.5 py-1 text-base outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] md:text-sm dark:bg-card dark:text-foreground">
             <option value="FullTime">Full Time</option>
             <option value="PartTime">Part Time</option>
             <option value="Consultant">Consultant</option>
@@ -144,7 +144,7 @@ export function DoctorRegistrationForm({
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="availability_status">Availability Status</Label>
-          <select id="availability_status" name="availability_status" defaultValue={availabilityStatus} className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 py-1 text-base outline-none md:text-sm dark:bg-input/30">
+          <select id="availability_status" name="availability_status" defaultValue={availabilityStatus} className="h-8 w-full rounded-lg border border-input bg-background px-2.5 py-1 text-base outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] md:text-sm dark:bg-card dark:text-foreground">
             <option value="">Select</option>
             <option value="Available">Available</option>
             <option value="On Break">On Break</option>
